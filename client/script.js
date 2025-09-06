@@ -1,10 +1,12 @@
-// Backend API configuration
-const API_BASE_URL = 'http://localhost:8000';
+// Backend API configuration - auto-detect URL for Vercel deployment
+const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+    ? 'http://localhost:8000' 
+    : '';
 
 // Function to call the backend API
 async function callBackendAPI(text) {
     try {
-        const response = await fetch(`${API_BASE_URL}/analyze`, {
+        const response = await fetch(`${API_BASE_URL}/api/analyze`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

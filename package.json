@@ -1,0 +1,22 @@
+{
+  "name": "calmmind",
+  "version": "1.0.0",
+  "description": "Mental Health Analysis Platform using AI",
+  "main": "client/index.html",
+  "scripts": {
+    "dev": "python -m http.server 8001",
+    "start": "python -m http.server 8001"
+  },
+  "keywords": [
+    "mental-health",
+    "ai",
+    "bert",
+    "fastapi",
+    "gradio"
+  ],
+  "author": "Bien Kieu",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
