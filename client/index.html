@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CalmMind</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌱CalmMind</h1>
+            <p>Share your thoughts with us, and we’ll gently listen, understand your mood, and offer caring advice to support your wellbeing.</p>
+        </div>
+
+        <div class="input-section">
+            <label class="input-label" for="userInput">
+                How are you feeling today? 💭
+            </label>
+            <textarea 
+                id="userInput" 
+                class="input-textarea" 
+                placeholder="Share with CalmMind: How are you feeling today? Whether you're happy, anxious, stressed, or just need someone to listen, we'll understand your feelings and gently offer caring advice for you."
+            ></textarea>
+            
+            <!-- Examples Section -->
+            <div class="examples-section">
+                <h3 class="examples-title">💡 Need inspiration? Try these examples:</h3>
+                <div class="language-tabs">
+                    <button class="tab-btn active" data-lang="en">English</button>
+                    <button class="tab-btn" data-lang="vi">Tiếng Việt</button>
+                    <button class="tab-btn" data-lang="fr">Français</button>
+                </div>
+                
+                <div class="examples-content">
+                    <div class="examples-tab active" id="examples-en">
+                        <div class="example-item" data-text="I've been feeling really anxious lately about my job interview next week. I can't stop worrying about what might go wrong.">
+                            <span class="example-text">I've been feeling really anxious lately about my job interview next week...</span>
+                        </div>
+                        <div class="example-item" data-text="I feel so overwhelmed with all the responsibilities at work and home. I don't know how to manage everything.">
+                            <span class="example-text">I feel so overwhelmed with all the responsibilities at work and home...</span>
+                        </div>
+                        <div class="example-item" data-text="I've been having trouble sleeping and I feel sad most of the time. Nothing seems to bring me joy anymore.">
+                            <span class="example-text">I've been having trouble sleeping and I feel sad most of the time...</span>
+                        </div>
+                        <div class="example-item" data-text="I'm excited about my new project but also nervous about meeting new people and making a good impression.">
+                            <span class="example-text">I'm excited about my new project but also nervous about meeting new people...</span>
+                        </div>
+                    </div>
+                    
+                    <div class="examples-tab" id="examples-vi">
+                        <div class="example-item" data-text="Tôi cảm thấy rất lo lắng gần đây về buổi phỏng vấn việc làm tuần tới. Tôi không thể ngừng lo lắng về những gì có thể xảy ra sai.">
+                            <span class="example-text">Tôi cảm thấy rất lo lắng gần đây về buổi phỏng vấn việc làm tuần tới...</span>
+                        </div>
+                        <div class="example-item" data-text="Tôi cảm thấy quá tải với tất cả trách nhiệm ở công ty và ở nhà. Tôi không biết làm thế nào để quản lý mọi thứ.">
+                            <span class="example-text">Tôi cảm thấy quá tải với tất cả trách nhiệm ở công ty và ở nhà...</span>
+                        </div>
+                        <div class="example-item" data-text="Tôi đã gặp khó khăn trong việc ngủ và tôi cảm thấy buồn hầu hết thời gian. Không có gì dường như mang lại niềm vui cho tôi nữa.">
+                            <span class="example-text">Tôi đã gặp khó khăn trong việc ngủ và tôi cảm thấy buồn hầu hết thời gian...</span>
+                        </div>
+                        <div class="example-item" data-text="Tôi rất hào hứng về dự án mới của mình nhưng cũng hồi hộp về việc gặp gỡ những người mới và tạo ấn tượng tốt.">
+                            <span class="example-text">Tôi rất hào hứng về dự án mới của mình nhưng cũng hồi hộp về việc gặp gỡ những người mới...</span>
+                        </div>
+                    </div>
+                    
+                    <div class="examples-tab" id="examples-fr">
+                        <div class="example-item" data-text="Je me sens vraiment anxieux ces derniers temps à propos de mon entretien d'embauche la semaine prochaine. Je ne peux pas arrêter de m'inquiéter de ce qui pourrait mal se passer.">
+                            <span class="example-text">Je me sens vraiment anxieux ces derniers temps à propos de mon entretien...</span>
+                        </div>
+                        <div class="example-item" data-text="Je me sens tellement dépassé par toutes les responsabilités au travail et à la maison. Je ne sais pas comment tout gérer.">
+                            <span class="example-text">Je me sens tellement dépassé par toutes les responsabilités au travail...</span>
+                        </div>
+                        <div class="example-item" data-text="J'ai du mal à dormir et je me sens triste la plupart du temps. Rien ne semble me donner de la joie.">
+                            <span class="example-text">J'ai du mal à dormir et je me sens triste la plupart du temps...</span>
+                        </div>
+                        <div class="example-item" data-text="Je suis excité par mon nouveau projet mais aussi nerveux à l'idée de rencontrer de nouvelles personnes et de faire bonne impression.">
+                            <span class="example-text">Je suis excité par mon nouveau projet mais aussi nerveux à l'idée de rencontrer...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button id="analyzeBtn" class="analyze-btn">
+            Analyze My Feelings
+        </button>
+
+        <div id="inputError" class="error-message"></div>
+
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>Understanding your feelings and preparing personalized insights...</p>
+        </div>
+
+        <div id="results" class="results">
+            <div id="translationResult" class="result-card" style="display: none;">
+                <div class="result-title">
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <path d="M12.87 15.07l-2.54-2.51.03-.03c1.74-1.94 2.98-4.17 3.71-6.53H17V4h-7V2H8v2H1v1.99h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/>
+                    </svg>
+                    Translation
+                </div>
+                <div class="result-content" id="translatedText"></div>
+            </div>
+
+            <div id="classificationResult" class="result-card">
+                <div class="result-title">
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <path d="M9 11H7v6h2v-6zm4 0h-2v6h2v-6zm4 0h-2v6h2v-6zm2.5-9H19v2h-1.5v17.5c0 .83-.67 1.5-1.5 1.5h-9c-.83 0-1.5-.67-1.5-1.5V4H4V2h4.5C8.5 .67 9.17 0 10 0h4c.83 0 1.5.67 1.5 1.5H20v1.5zM10 2v1.5h4V2h-4z"/>
+                    </svg>
+                    Mental Health Classification
+                </div>
+                <div class="result-content">
+                    <span id="classificationLabel" class="classification-tag"></span>
+                    <p style="margin-top: 15px;" id="classificationDescription"></p>
+                </div>
+            </div>
+
+            <div id="suggestionsResult" class="result-card">
+                <div class="result-title">
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    </svg>
+                    Personalized Suggestions
+                </div>
+                <div class="result-content" id="suggestionText"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
