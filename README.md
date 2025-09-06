@@ -188,7 +188,7 @@ mental-health.ipynb # ML model training notebook
 2. **Backend**: Add endpoints in `server/main.py`
 3. **ML Model**: Update notebook and retrain model
 
-## 📈 Performance
+## Performance
 
 - **Backend**: FastAPI with async/await
 - **ML Inference**: Gradio client with caching
@@ -218,7 +218,7 @@ mental-health.ipynb # ML model training notebook
 3. Commit changes
 4. Push and create Pull Request
 
-## 📄 License
+## License
 
 MIT License - see LICENSE file for details
 
