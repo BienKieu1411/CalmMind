@@ -1,4 +1,4 @@
-const API_BASE_URL = 'https://calmmind-production.up.railway.app';
+const API_BASE_URL = '';
 
 async function callBackendAPI(text) {
     try {

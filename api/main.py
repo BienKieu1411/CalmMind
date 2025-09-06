@@ -3,18 +3,20 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
-import os
 from dotenv import load_dotenv
 from langdetect import detect
 import httpx
 from groq import Groq
 import re
 
+from mangum import Mangum  # bắt buộc cho Vercel
+
+import os
 load_dotenv()
 
 app = FastAPI(title="CalmMind Backend", version="1.0.0")
 
-# CORS config
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -23,13 +25,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mount static folder under /static
+# Serve frontend static files
 app.mount("/static", StaticFiles(directory="client"), name="static")
 
-# Serve index.html at root
 @app.get("/")
 async def index():
     return FileResponse("client/index.html")
+
 
 # Gradio client lazy load
 client_gradio = None
@@ -43,6 +45,7 @@ def get_gradio_client():
             client_gradio = None
     return client_gradio
 
+
 # Pydantic models
 class UserInput(BaseModel):
     text: str
@@ -52,6 +55,7 @@ class AnalysisResponse(BaseModel):
     classification: str
     suggestions: str
     user_language: str
+
 
 # Utility functions
 def detect_language(text: str) -> str:
@@ -160,7 +164,8 @@ Respond in {user_language} and format as follows:
     except:
         return "Sorry, an error occurred while generating suggestions. Please try again later."
 
-# POST analyze route
+
+# POST /analyze
 @app.post("/analyze", response_model=AnalysisResponse)
 async def analyze_mental_health(user_input: UserInput):
     try:
@@ -177,8 +182,6 @@ async def analyze_mental_health(user_input: UserInput):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
 
-# Run
-if __name__ == "__main__":
-    import uvicorn
-    port = int(os.environ.get("PORT", 8000))
-    uvicorn.run(app, host="0.0.0.0", port=port)
+
+# Vercel serverless handler
+handler = Mangum(app)
