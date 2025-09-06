@@ -1,5 +1,4 @@
 {
-  "version": 2,
   "builds": [
     {
       "src": "api/main.py",
@@ -9,7 +8,7 @@
     { "src": "client/**", "use": "@vercel/static" }
   ],
   "routes": [
-    { "src": "/api/(.*)", "dest": "/api/main.py" },
+    { "src": "/api/analyze", "dest": "/api/main.py" },
     { "src": "/(.*)", "dest": "/client/$1" }
   ]
 }
