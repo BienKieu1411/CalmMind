@@ -6,4 +6,4 @@ langdetect==1.0.9
 groq==0.4.1
 httpx==0.25.0
 pydantic==2.5.0
-mangum==0.18.1
+mangum==0.17.0
