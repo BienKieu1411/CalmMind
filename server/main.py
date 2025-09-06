@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import os
 from dotenv import load_dotenv
@@ -13,6 +14,7 @@ load_dotenv()
 
 app = FastAPI(title="CalmMind Backend", version="1.0.0")
 
+# CORS config
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -21,10 +23,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.mount("/", StaticFiles(directory="client", html=True), name="client")
+# Mount static folder under /static
+app.mount("/static", StaticFiles(directory="client"), name="static")
 
+# Serve index.html at root
+@app.get("/")
+async def index():
+    return FileResponse("client/index.html")
+
+# Gradio client lazy load
 client_gradio = None
-
 def get_gradio_client():
     global client_gradio
     if client_gradio is None:
@@ -35,6 +43,7 @@ def get_gradio_client():
             client_gradio = None
     return client_gradio
 
+# Pydantic models
 class UserInput(BaseModel):
     text: str
 
@@ -44,6 +53,7 @@ class AnalysisResponse(BaseModel):
     suggestions: str
     user_language: str
 
+# Utility functions
 def detect_language(text: str) -> str:
     return detect(text)
 
@@ -90,7 +100,8 @@ def format_suggestions(text: str) -> str:
     if not text.strip():
         return "No suggestions were generated."
     text = text.replace("**", "").replace("*", "").strip()
-    patterns = [r"(?:\d+[\.\)]\s*)", r"(?:^|\n)(?=\d+[\.\)]\s)", r"(?:\n\s*)(?=\d+[\.\)]\s)", r"(?:^|\n)(?=[•\-\*]\s)", r"(?:\n\s*)(?=[•\-\*]\s)"]
+    patterns = [r"(?:\d+[\.\)]\s*)", r"(?:^|\n)(?=\d+[\.\)]\s)", r"(?:\n\s*)(?=\d+[\.\)]\s)",
+                r"(?:^|\n)(?=[•\-\*]\s)", r"(?:\n\s*)(?=[•\-\*]\s)"]
     suggestions = []
     for pattern in patterns:
         parts = re.split(pattern, text)
@@ -149,6 +160,7 @@ Respond in {user_language} and format as follows:
     except:
         return "Sorry, an error occurred while generating suggestions. Please try again later."
 
+# POST analyze route
 @app.post("/analyze", response_model=AnalysisResponse)
 async def analyze_mental_health(user_input: UserInput):
     try:
@@ -165,6 +177,7 @@ async def analyze_mental_health(user_input: UserInput):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
 
+# Run
 if __name__ == "__main__":
     import uvicorn
     port = int(os.environ.get("PORT", 8000))
