@@ -5,7 +5,6 @@ import uvicorn
 import os
 from dotenv import load_dotenv
 from langdetect import detect
-from gradio_client import Client
 import httpx
 from groq import Groq
 import re
@@ -22,7 +21,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-client_gradio = Client("BienKieu/mental-health")
+client_gradio = None
+
+def get_gradio_client():
+    global client_gradio
+    if client_gradio is None:
+        try:
+            from gradio_client import Client
+            client_gradio = Client("BienKieu/mental-health")
+        except Exception:
+            client_gradio = None
+    return client_gradio
 
 class UserInput(BaseModel):
     text: str
@@ -43,34 +52,30 @@ async def translate_to_english(text: str, from_language: str) -> str:
         async with httpx.AsyncClient(timeout=10) as client_http:
             response = await client_http.post(
                 "https://libretranslate.de/translate",
-                data={
-                    "q": text,
-                    "source": from_language,
-                    "target": "en",
-                    "format": "text"
-                }
+                data={"q": text, "source": from_language, "target": "en", "format": "text"}
             )
         if response.status_code == 200:
             return response.json().get("translatedText", text)
-        else:
-            return f"[{from_language.upper()}] {text}"
+        return f"[{from_language.upper()}] {text}"
     except:
         return f"[{from_language.upper()}] {text}"
 
 async def classify_mental_health(text: str) -> str:
+    client = get_gradio_client()
+    if client is None:
+        return "unknown"
     try:
-        result = client_gradio.predict(text, api_name="/_predict")
+        result = client.predict(text, api_name="/_predict")
         if not result:
             return "unknown"
         if isinstance(result, (tuple, list)) and len(result) >= 2:
             label = result[0]
             score = result[1] if len(result) > 1 else None
-            if not label or label == "nan" or label == "" or str(label).lower() == "nan":
+            if not label or str(label).lower() in ["nan", ""]:
                 return "unknown"
             if score is not None:
                 try:
-                    score_float = float(score)
-                    if score_float != score_float:
+                    if float(score) != float(score):
                         return "unknown"
                 except:
                     return "unknown"
@@ -80,16 +85,10 @@ async def classify_mental_health(text: str) -> str:
         return "unknown"
 
 def format_suggestions(text: str) -> str:
-    if not text or text.strip() == "":
+    if not text.strip():
         return "No suggestions were generated."
     text = text.replace("**", "").replace("*", "").strip()
-    patterns = [
-        r"(?:\d+[\.\)]\s*)",
-        r"(?:^|\n)(?=\d+[\.\)]\s)",
-        r"(?:\n\s*)(?=\d+[\.\)]\s)",
-        r"(?:^|\n)(?=[•\-\*]\s)",
-        r"(?:\n\s*)(?=[•\-\*]\s)"
-    ]
+    patterns = [r"(?:\d+[\.\)]\s*)", r"(?:^|\n)(?=\d+[\.\)]\s)", r"(?:\n\s*)(?=\d+[\.\)]\s)", r"(?:^|\n)(?=[•\-\*]\s)", r"(?:\n\s*)(?=[•\-\*]\s)"]
     suggestions = []
     for pattern in patterns:
         parts = re.split(pattern, text)
@@ -97,8 +96,7 @@ def format_suggestions(text: str) -> str:
             suggestions = [part.strip() for part in parts if part.strip()]
             break
     if not suggestions:
-        separators = [r"\n\s*\n", r"\n(?=\d)", r"\n(?=[•\-\*])"]
-        for sep in separators:
+        for sep in [r"\n\s*\n", r"\n(?=\d)", r"\n(?=[•\-\*])"]:
             parts = re.split(sep, text)
             if len(parts) > 1:
                 suggestions = [part.strip() for part in parts if part.strip()]
