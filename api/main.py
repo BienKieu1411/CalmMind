@@ -163,4 +163,4 @@ async def analyze_mental_health(user_input: UserInput):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
 
-handler = Mangum(app, log_level="debug")
+handler = Mangum(app)
