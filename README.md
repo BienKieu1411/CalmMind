@@ -2,16 +2,16 @@
 
 CalmMind is an intelligent mental health analysis platform that uses AI to understand emotions and provide personalized mental health care recommendations.
 
-## 📋 Overview
+## Overview
 
 CalmMind allows users to share their emotions and thoughts through a friendly web interface. The system will:
 
-- 🌍 **Detect language** and automatically translate to English if needed
-- 🧠 **Classify mental health conditions** using a trained BERT model
-- 💡 **Provide personalized suggestions** based on AI analysis
-- 🎨 **Beautiful interface** with user-friendly and intuitive design
+- **Detect language** and automatically translate to English if needed
+- **Classify mental health conditions** using a trained BERT model
+- **Provide personalized suggestions** based on AI analysis
+- **Beautiful interface** with user-friendly and intuitive design
 
-## 🏗️ System Architecture
+## System Architecture
 
 The project is divided into 3 main components:
 
@@ -41,7 +41,7 @@ CalmMind/
 - Deployed on Hugging Face Hub
 - Classifies different psychological states
 
-## 🚀 Installation and Setup
+## Installation and Setup
 
 ### System Requirements
 - Python 3.8+
@@ -50,7 +50,7 @@ CalmMind/
 
 ### 1. Clone repository
 ```bash
-git clone <repository-url>
+git clone https://github.com/BienKieu1411/CalmMind
 cd CalmMind
 ```
 
@@ -78,7 +78,7 @@ python main.py
 ### 5. Access Application
 Open browser and navigate to: `http://localhost:8001` (or index.html file)
 
-## 🔧 Configuration
+## Configuration
 
 ### Environment Variables
 Create `.env` file in `server/` directory:
@@ -92,7 +92,7 @@ HF_TOKEN=your_huggingface_token_here
 1. **Groq API**: For generating personalized suggestions
 2. **Hugging Face Token**: For accessing ML model
 
-## 📊 Machine Learning Model
+## Machine Learning Model
 
 ### Dataset
 - Uses "Sentiment Analysis for Mental Health" dataset
@@ -115,7 +115,7 @@ HF_TOKEN=your_huggingface_token_here
 - Push model to Hugging Face Hub
 ```
 
-## 🌐 API Endpoints
+## API Endpoints
 
 ### POST `/analyze`
 Analyze text and return classification + suggestions
@@ -137,7 +137,7 @@ Analyze text and return classification + suggestions
 }
 ```
 
-## 🎨 Key Features
+## Key Features
 
 ### 1. Automatic Language Detection
 - Uses `langdetect` library
@@ -159,14 +159,14 @@ Analyze text and return classification + suggestions
 - Loading states and error handling
 - Visual results display with icons
 
-## 🔒 Security and Privacy
+## Security and Privacy
 
 - No user data storage
 - Real-time processing, no persistence
 - CORS configured for development
 - API keys protected via environment variables
 
-## 🛠️ Development
+## Development
 
 ### Code Structure
 ```
@@ -195,7 +195,7 @@ mental-health.ipynb # ML model training notebook
 - **Translation**: LibreTranslate API with timeout
 - **LLM**: Groq API with optimized parameters
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
@@ -211,7 +211,7 @@ mental-health.ipynb # ML model training notebook
    - Check internet connection
    - Verify Hugging Face token
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork repository
 2. Create feature branch
@@ -222,12 +222,12 @@ mental-health.ipynb # ML model training notebook
 
 MIT License - see LICENSE file for details
 
-## 👥 Authors
+## Authors
 
 - **Bien Kieu** - Developer & ML Engineer
 - **CalmMind Team** - Mental Health Platform
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - Hugging Face for BERT model and hosting
 - Groq for LLM API
