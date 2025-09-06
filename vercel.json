@@ -5,7 +5,8 @@
       "src": "api/analyze.py",
       "use": "@vercel/python",
       "config": {
-        "maxLambdaSize": "50mb"
+        "maxLambdaSize": "15mb",
+        "runtime": "python3.9"
       }
     }
   ],
@@ -19,7 +20,9 @@
       "dest": "client/$1"
     }
   ],
-  "env": {
-    "GROQ_API_KEY": ""
+  "functions": {
+    "api/analyze.py": {
+      "maxDuration": 30
+    }
   }
 }

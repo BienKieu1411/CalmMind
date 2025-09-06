@@ -1,0 +1,24 @@
+# Ignore unnecessary files for Vercel deployment
+server/
+gradio/
+mental-health.ipynb
+*.ipynb
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+node_modules/
+.git/
+.gitignore
+README.md
+DEPLOYMENT.md
+*.md
