@@ -1,22 +1,18 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from langdetect import detect
 import httpx
 from groq import Groq
 import re
-
-from mangum import Mangum  # bắt buộc cho Vercel
-
+from mangum import Mangum
 import os
+
 load_dotenv()
 
 app = FastAPI(title="CalmMind Backend", version="1.0.0")
 
-# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -25,15 +21,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Serve frontend static files
-app.mount("/static", StaticFiles(directory="client"), name="static")
-
-@app.get("/")
-async def index():
-    return FileResponse("client/index.html")
-
-
-# Gradio client lazy load
 client_gradio = None
 def get_gradio_client():
     global client_gradio
@@ -41,12 +28,10 @@ def get_gradio_client():
         try:
             from gradio_client import Client
             client_gradio = Client("BienKieu/mental-health")
-        except Exception:
+        except:
             client_gradio = None
     return client_gradio
 
-
-# Pydantic models
 class UserInput(BaseModel):
     text: str
 
@@ -56,8 +41,6 @@ class AnalysisResponse(BaseModel):
     suggestions: str
     user_language: str
 
-
-# Utility functions
 def detect_language(text: str) -> str:
     return detect(text)
 
@@ -164,8 +147,6 @@ Respond in {user_language} and format as follows:
     except:
         return "Sorry, an error occurred while generating suggestions. Please try again later."
 
-
-# POST /analyze
 @app.post("/analyze", response_model=AnalysisResponse)
 async def analyze_mental_health(user_input: UserInput):
     try:
@@ -182,6 +163,4 @@ async def analyze_mental_health(user_input: UserInput):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
 
-
-# Vercel serverless handler
 handler = Mangum(app)

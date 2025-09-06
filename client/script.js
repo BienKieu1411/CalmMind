@@ -1,4 +1,4 @@
-const API_BASE_URL = '';
+const API_BASE_URL = '/api';
 
 async function callBackendAPI(text) {
     try {

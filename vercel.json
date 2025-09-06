@@ -2,15 +2,19 @@
   "version": 2,
   "builds": [
     {
-      "src": "api/main.py",
+      "src": "server/main.py",
       "use": "@vercel/python"
+    },
+    {
+      "src": "client/**",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
     {
       "src": "/analyze",
       "methods": ["POST"],
-      "dest": "api/main.py"
+      "dest": "/server/main.py"
     },
     {
       "src": "/(.*)",
