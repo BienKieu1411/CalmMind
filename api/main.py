@@ -23,7 +23,6 @@ app.add_middleware(
 
 try:
     client_gradio = GradioClient("BienKieu/mental-health")
-    print("Loaded Gradio client successfully ✔")
 except Exception as e:
     client_gradio = None
     print("Error loading Gradio client:", e)
@@ -53,30 +52,23 @@ async def translate_to_english(text: str, from_language: str) -> str:
             )
             if response.status_code == 200:
                 translated = response.json().get("translatedText", text)
-                print("Translated text:", translated)
                 return translated
         return f"[{from_language.upper()}] {text}"
-    except Exception as e:
-        print("Translation error:", e)
+    except Exception:
         return f"[{from_language.upper()}] {text}"
 
 async def classify_mental_health(text: str) -> str:
     global client_gradio
     if client_gradio is None:
-        print("Gradio client not available")
         return "unknown"
     try:
         result = client_gradio.predict(text, api_name="/_predict")
-        print("Raw Gradio predict result:", result)
         if isinstance(result, (tuple, list)):
             label = result[0]
         else:
             label = result
-        label_str = str(label) if label else "unknown"
-        print("Classification label:", label_str)
-        return label_str
-    except Exception as e:
-        print("Classification error:", e)
+        return str(label) if label else "unknown"
+    except Exception:
         return "unknown"
 
 def format_suggestions(text: str) -> str:
@@ -131,7 +123,6 @@ Respond in {user_language} and format as follows:
 2. Second suggestion
 3. Third suggestion
 ..."""
-        print("LLM suggestion prompt:", suggestion_prompt[:500], "...")
         client_groq = Groq()
         completion = client_groq.chat.completions.create(
             model="openai/gpt-oss-20b",
@@ -139,24 +130,18 @@ Respond in {user_language} and format as follows:
             temperature=0.7,
             max_tokens=600,
             top_p=0.9,
-            reasoning_effort="medium",
             stream=False
         )
         raw_suggestions = completion.choices[0].message.content.strip()
-        print("Raw LLM suggestions:", raw_suggestions[:500], "...")
         if not raw_suggestions or raw_suggestions.lower().startswith("error"):
             return "Sorry, unable to generate suggestions at this time."
-        formatted = format_suggestions(raw_suggestions)
-        print("Formatted suggestions:", formatted[:500], "...")
-        return formatted
-    except Exception as e:
-        print("LLM suggestion error:", e)
+        return format_suggestions(raw_suggestions)
+    except Exception:
         return "Sorry, an error occurred while generating suggestions. Please try again later."
 
 @app.post("/analyze", response_model=AnalysisResponse)
 async def analyze_mental_health(user_input: UserInput):
     try:
-        print("Input text:", user_input.text)
         user_lang = detect_language(user_input.text)
         text_english = await translate_to_english(user_input.text, user_lang) if user_lang != 'en' else user_input.text
         classification = await classify_mental_health(text_english)
@@ -168,5 +153,4 @@ async def analyze_mental_health(user_input: UserInput):
             user_language=user_lang
         )
     except Exception as e:
-        print("Error in /analyze:", e)
         raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
