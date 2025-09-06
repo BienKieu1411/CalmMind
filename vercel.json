@@ -20,7 +20,7 @@
     }
   ],
   "env": {
-    "GROQ_API_KEY": "@groq_api_key",
-    "HF_TOKEN": "@hf_token"
+    "GROQ_API_KEY": "",
+    "HF_TOKEN": ""
   }
 }
