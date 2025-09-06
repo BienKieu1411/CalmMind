@@ -9,11 +9,15 @@
   "routes": [
     {
       "src": "/api/analyze",
-      "dest": "/api/analyze.py"
+      "dest": "api/analyze.py"
+    },
+    {
+      "src": "/",
+      "dest": "client/index.html"
     },
     {
       "src": "/(.*)",
-      "dest": "/client/$1"
+      "dest": "client/$1"
     }
   ]
 }
