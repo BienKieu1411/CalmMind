@@ -1,6 +1,4 @@
-const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-    ? 'http://localhost:8000' 
-    : '';
+const API_BASE_URL = '';
 
 async function callBackendAPI(text) {
     try {
@@ -39,7 +37,7 @@ async function analyzeMentalHealth() {
         displayResults(response.classification, response.suggestions);
     } catch (error) {
         console.error('Analysis error:', error);
-        displayError('An error occurred during analysis. Please make sure the backend server is running on port 8000.');
+        displayError('An error occurred during analysis. Please try again later.');
     } finally {
         document.getElementById('loading').style.display = 'none';
         document.getElementById('analyzeBtn').disabled = false;
@@ -77,16 +75,16 @@ document.getElementById('userInput').addEventListener('keypress', function(e) {
 });
 
 document.getElementById('userInput').addEventListener('input', function() {
+    const maxHeight = 300;
     this.style.height = 'auto';
-    this.style.height = this.scrollHeight + 'px';
+    this.style.height = Math.min(this.scrollHeight, maxHeight) + 'px';
     document.getElementById('results').style.display = 'none';
 });
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Tab switch cho gợi ý đa ngôn ngữ
     const tabButtons = document.querySelectorAll('.tab-btn');
     const exampleTabs = document.querySelectorAll('.examples-tab');
-    
+
     tabButtons.forEach(button => {
         button.addEventListener('click', function() {
             const targetLang = this.getAttribute('data-lang');
@@ -97,7 +95,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Click gợi ý điền vào textarea
     const exampleItems = document.querySelectorAll('.example-item');
     const userInput = document.getElementById('userInput');
 
@@ -106,9 +103,10 @@ document.addEventListener('DOMContentLoaded', function() {
             const exampleText = this.getAttribute('data-text');
             userInput.value = exampleText;
             userInput.style.height = 'auto';
-            userInput.style.height = userInput.scrollHeight + 'px';
+            userInput.style.height = Math.min(userInput.scrollHeight, 300) + 'px';
             document.getElementById('results').style.display = 'none';
             userInput.focus();
+            analyzeMentalHealth();
         });
     });
 });
