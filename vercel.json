@@ -1,24 +1,11 @@
 {
   "version": 2,
   "builds": [
-    {
-      "src": "server/main.py",
-      "use": "@vercel/python"
-    },
-    {
-      "src": "client/**",
-      "use": "@vercel/static"
-    }
+    { "src": "api/main.py", "use": "@vercel/python" },
+    { "src": "client/**", "use": "@vercel/static" }
   ],
   "routes": [
-    {
-      "src": "/analyze",
-      "methods": ["POST"],
-      "dest": "/server/main.py"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/client/$1"
-    }
+    { "src": "/api/analyze", "methods": ["POST"], "dest": "api/main.py" },
+    { "src": "/(.*)", "dest": "/client/$1" }
   ]
 }
