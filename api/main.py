@@ -3,16 +3,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from langdetect import detect
-from gradio_client import Client as GradioClient
-from groq import Groq
 import httpx
+from groq import Groq
 import re
-import os
+import time
 
 load_dotenv()
 
 app = FastAPI(title="CalmMind Backend", version="1.0.0")
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -21,11 +19,26 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-try:
-    client_gradio = GradioClient("BienKieu/mental-health")
-except Exception as e:
-    client_gradio = None
-    print("Error loading Gradio client:", e)
+client_gradio = None
+MAX_RETRIES = 3
+
+def load_gradio_client():
+    global client_gradio
+    retries = 0
+    from gradio_client import Client as GradioClient
+    while retries < MAX_RETRIES and client_gradio is None:
+        try:
+            client_gradio = GradioClient("BienKieu/mental-health")
+            client_gradio.predict("Test")  # ping
+        except Exception as e:
+            print(f"Gradio client load failed ({retries+1}/{MAX_RETRIES}):", e)
+            client_gradio = None
+            retries += 1
+            time.sleep(1)
+    if client_gradio is None:
+        print("Failed to load Gradio client after retries")
+
+load_gradio_client()
 
 class UserInput(BaseModel):
     text: str
@@ -38,7 +51,6 @@ class AnalysisResponse(BaseModel):
 
 def detect_language(text: str) -> str:
     lang = detect(text)
-    print("Detected language:", lang)
     return lang
 
 async def translate_to_english(text: str, from_language: str) -> str:
@@ -51,25 +63,38 @@ async def translate_to_english(text: str, from_language: str) -> str:
                 data={"q": text, "source": from_language, "target": "en", "format": "text"}
             )
             if response.status_code == 200:
-                translated = response.json().get("translatedText", text)
-                return translated
+                return response.json().get("translatedText", text)
         return f"[{from_language.upper()}] {text}"
-    except Exception:
+    except:
         return f"[{from_language.upper()}] {text}"
 
 async def classify_mental_health(text: str) -> str:
     global client_gradio
-    if client_gradio is None:
-        return "unknown"
+    if client_gradio:
+        try:
+            result = client_gradio.predict(text, api_name="/_predict")
+            label = result[0] if isinstance(result, (list, tuple)) else result
+            if label:
+                return str(label)
+        except Exception as e:
+            print("Gradio classify error:", e)
+    # fallback: LLM classify
     try:
-        result = client_gradio.predict(text, api_name="/_predict")
-        if isinstance(result, (tuple, list)):
-            label = result[0]
-        else:
-            label = result
-        return str(label) if label else "unknown"
-    except Exception:
-        return "unknown"
+        client_groq = Groq()
+        prompt = f"Classify the following text into one of these categories: Normal, Anxiety, Depression, Stress, Suicidal, Bipolar, Personality disorder.\nText: \"{text}\""
+        completion = client_groq.chat.completions.create(
+            model="openai/gpt-oss-20b",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.0,
+            top_p=0.9,
+            stream=False
+        )
+        raw_label = completion.choices[0].message.content.strip()
+        if raw_label:
+            return raw_label.split("\n")[0].strip()
+    except Exception as e:
+        print("LLM classify error:", e)
+    return "unknown"
 
 def format_suggestions(text: str) -> str:
     if not text.strip():
@@ -108,17 +133,14 @@ async def get_llm_suggestions(classification: str, user_language: str, original_
     try:
         text_language = detect_language(original_text)
         translated_text = await translate_to_english(original_text, text_language)
-        suggestion_prompt = f"""You are a psychology expert. Analyze the following text and provide practical mental health suggestions:
+        prompt = f"""You are a psychology expert. Analyze the following text and provide practical mental health suggestions:
 
 Category: {classification}
 Text: "{translated_text}"
 
-Provide 3-5 specific and useful mental health suggestions for this text. Each suggestion should:
-- Be short and easy to understand
-- Be practical and actionable
-- Match the context described
+Provide 3-5 short, practical, actionable mental health suggestions.
 
-Respond in {user_language} and format as follows:
+Respond in {user_language} and format as:
 1. First suggestion
 2. Second suggestion
 3. Third suggestion
@@ -126,17 +148,14 @@ Respond in {user_language} and format as follows:
         client_groq = Groq()
         completion = client_groq.chat.completions.create(
             model="openai/gpt-oss-20b",
-            messages=[{"role": "user", "content": suggestion_prompt}],
+            messages=[{"role": "user", "content": prompt}],
             temperature=0.7,
-            max_tokens=600,
             top_p=0.9,
             stream=False
         )
         raw_suggestions = completion.choices[0].message.content.strip()
-        if not raw_suggestions or raw_suggestions.lower().startswith("error"):
-            return "Sorry, unable to generate suggestions at this time."
         return format_suggestions(raw_suggestions)
-    except Exception:
+    except:
         return "Sorry, an error occurred while generating suggestions. Please try again later."
 
 @app.post("/analyze", response_model=AnalysisResponse)
