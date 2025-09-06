@@ -3,8 +3,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from langdetect import detect
-import httpx
+from gradio_client import Client as GradioClient
 from groq import Groq
+import httpx
 import re
 import os
 
@@ -20,17 +21,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-client_gradio = None
-def get_gradio_client():
-    global client_gradio
-    if client_gradio is None:
-        try:
-            from gradio_client import Client
-            client_gradio = Client("BienKieu/mental-health")
-        except Exception as e:
-            print("Error loading Gradio client:", e)
-            client_gradio = None
-    return client_gradio
+try:
+    client_gradio = GradioClient("BienKieu/mental-health")
+    print("Loaded Gradio client successfully ✔")
+except Exception as e:
+    client_gradio = None
+    print("Error loading Gradio client:", e)
 
 class UserInput(BaseModel):
     text: str
@@ -65,12 +61,12 @@ async def translate_to_english(text: str, from_language: str) -> str:
         return f"[{from_language.upper()}] {text}"
 
 async def classify_mental_health(text: str) -> str:
-    client = get_gradio_client()
-    if client is None:
+    global client_gradio
+    if client_gradio is None:
         print("Gradio client not available")
         return "unknown"
     try:
-        result = client.predict(text, api_name="/_predict")
+        result = client_gradio.predict(text, api_name="/_predict")
         print("Raw Gradio predict result:", result)
         if isinstance(result, (tuple, list)):
             label = result[0]
@@ -135,13 +131,13 @@ Respond in {user_language} and format as follows:
 2. Second suggestion
 3. Third suggestion
 ..."""
-        print("LLM suggestion prompt:", suggestion_prompt[:500], "...")  # in 500 ký tự đầu
+        print("LLM suggestion prompt:", suggestion_prompt[:500], "...")
         client_groq = Groq()
         completion = client_groq.chat.completions.create(
             model="openai/gpt-oss-20b",
             messages=[{"role": "user", "content": suggestion_prompt}],
             temperature=0.7,
-            max_completion_tokens=600,
+            max_tokens=600,
             top_p=0.9,
             reasoning_effort="medium",
             stream=False
