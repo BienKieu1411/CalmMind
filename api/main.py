@@ -27,7 +27,8 @@ def get_gradio_client():
         try:
             from gradio_client import Client
             client_gradio = Client("BienKieu/mental-health")
-        except:
+        except Exception as e:
+            print("Error loading Gradio client:", e)
             client_gradio = None
     return client_gradio
 
@@ -41,7 +42,9 @@ class AnalysisResponse(BaseModel):
     user_language: str
 
 def detect_language(text: str) -> str:
-    return detect(text)
+    lang = detect(text)
+    print("Detected language:", lang)
+    return lang
 
 async def translate_to_english(text: str, from_language: str) -> str:
     if from_language == "en":
@@ -53,33 +56,31 @@ async def translate_to_english(text: str, from_language: str) -> str:
                 data={"q": text, "source": from_language, "target": "en", "format": "text"}
             )
             if response.status_code == 200:
-                return response.json().get("translatedText", text)
+                translated = response.json().get("translatedText", text)
+                print("Translated text:", translated)
+                return translated
         return f"[{from_language.upper()}] {text}"
-    except:
+    except Exception as e:
+        print("Translation error:", e)
         return f"[{from_language.upper()}] {text}"
 
 async def classify_mental_health(text: str) -> str:
     client = get_gradio_client()
     if client is None:
+        print("Gradio client not available")
         return "unknown"
     try:
         result = client.predict(text, api_name="/_predict")
-        if not result:
-            return "unknown"
-        if isinstance(result, (tuple, list)) and len(result) >= 2:
+        print("Raw Gradio predict result:", result)
+        if isinstance(result, (tuple, list)):
             label = result[0]
-            score = result[1] if len(result) > 1 else None
-            if not label or str(label).lower() in ["nan", ""]:
-                return "unknown"
-            if score is not None:
-                try:
-                    if float(score) != float(score):
-                        return "unknown"
-                except:
-                    return "unknown"
-            return str(label)
-        return "unknown"
-    except:
+        else:
+            label = result
+        label_str = str(label) if label else "unknown"
+        print("Classification label:", label_str)
+        return label_str
+    except Exception as e:
+        print("Classification error:", e)
         return "unknown"
 
 def format_suggestions(text: str) -> str:
@@ -134,6 +135,7 @@ Respond in {user_language} and format as follows:
 2. Second suggestion
 3. Third suggestion
 ..."""
+        print("LLM suggestion prompt:", suggestion_prompt[:500], "...")  # in 500 ký tự đầu
         client_groq = Groq()
         completion = client_groq.chat.completions.create(
             model="openai/gpt-oss-20b",
@@ -145,15 +147,20 @@ Respond in {user_language} and format as follows:
             stream=False
         )
         raw_suggestions = completion.choices[0].message.content.strip()
+        print("Raw LLM suggestions:", raw_suggestions[:500], "...")
         if not raw_suggestions or raw_suggestions.lower().startswith("error"):
             return "Sorry, unable to generate suggestions at this time."
-        return format_suggestions(raw_suggestions)
-    except:
+        formatted = format_suggestions(raw_suggestions)
+        print("Formatted suggestions:", formatted[:500], "...")
+        return formatted
+    except Exception as e:
+        print("LLM suggestion error:", e)
         return "Sorry, an error occurred while generating suggestions. Please try again later."
 
 @app.post("/analyze", response_model=AnalysisResponse)
 async def analyze_mental_health(user_input: UserInput):
     try:
+        print("Input text:", user_input.text)
         user_lang = detect_language(user_input.text)
         text_english = await translate_to_english(user_input.text, user_lang) if user_lang != 'en' else user_input.text
         classification = await classify_mental_health(text_english)
@@ -165,4 +172,5 @@ async def analyze_mental_health(user_input: UserInput):
             user_language=user_lang
         )
     except Exception as e:
+        print("Error in /analyze:", e)
         raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
