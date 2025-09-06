@@ -7,7 +7,12 @@ async function callBackendAPI(text) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ text })
         });
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            const errorMessage = errorData.detail || `HTTP error! status: ${response.status}`;
+            throw new Error(errorMessage);
+        }
         return await response.json();
     } catch (error) {
         console.error('Backend API error:', error);
