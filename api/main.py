@@ -29,7 +29,7 @@ def load_gradio_client():
     while retries < MAX_RETRIES and client_gradio is None:
         try:
             client_gradio = GradioClient("BienKieu/mental-health")
-            client_gradio.predict("Test")  # ping
+            client_gradio.predict("Test")
         except Exception as e:
             print(f"Gradio client load failed ({retries+1}/{MAX_RETRIES}):", e)
             client_gradio = None
@@ -50,8 +50,7 @@ class AnalysisResponse(BaseModel):
     user_language: str
 
 def detect_language(text: str) -> str:
-    lang = detect(text)
-    return lang
+    return detect(text)
 
 async def translate_to_english(text: str, from_language: str) -> str:
     if from_language == "en":
@@ -68,17 +67,20 @@ async def translate_to_english(text: str, from_language: str) -> str:
     except:
         return f"[{from_language.upper()}] {text}"
 
+def clean_label(label: str) -> str:
+    if not label:
+        return "unknown"
+    return re.sub(r"[*_`]", "", label).strip()
+
 async def classify_mental_health(text: str) -> str:
     global client_gradio
     if client_gradio:
         try:
             result = client_gradio.predict(text, api_name="/_predict")
             label = result[0] if isinstance(result, (list, tuple)) else result
-            if label:
-                return str(label)
+            return clean_label(str(label)) if label else "unknown"
         except Exception as e:
             print("Gradio classify error:", e)
-    # fallback: LLM classify
     try:
         client_groq = Groq()
         prompt = f"Classify the following text into one of these categories: Normal, Anxiety, Depression, Stress, Suicidal, Bipolar, Personality disorder.\nText: \"{text}\""
@@ -91,7 +93,7 @@ async def classify_mental_health(text: str) -> str:
         )
         raw_label = completion.choices[0].message.content.strip()
         if raw_label:
-            return raw_label.split("\n")[0].strip()
+            return clean_label(raw_label.split("\n")[0])
     except Exception as e:
         print("LLM classify error:", e)
     return "unknown"
