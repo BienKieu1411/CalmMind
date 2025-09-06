@@ -20,6 +20,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+client_gradio = None
+def get_gradio_client():
+    global client_gradio
+    if client_gradio is None:
+        try:
+            from gradio_client import Client
+            client_gradio = Client("BienKieu/mental-health")
+        except:
+            client_gradio = None
+    return client_gradio
+
 class UserInput(BaseModel):
     text: str
 
@@ -29,33 +40,8 @@ class AnalysisResponse(BaseModel):
     suggestions: str
     user_language: str
 
-_groq_client = None
-_gradio_client = None
-
-def get_groq_client():
-    global _groq_client
-    if _groq_client is None:
-        try:
-            _groq_client = Groq()
-        except Exception:
-            pass
-    return _groq_client
-
-def get_gradio_client():
-    global _gradio_client
-    if _gradio_client is None:
-        try:
-            from gradio_client import Client
-            _gradio_client = Client("BienKieu/mental-health")
-        except Exception:
-            pass
-    return _gradio_client
-
 def detect_language(text: str) -> str:
-    try:
-        return detect(text)
-    except Exception:
-        return "en"
+    return detect(text)
 
 async def translate_to_english(text: str, from_language: str) -> str:
     if from_language == "en":
@@ -66,11 +52,11 @@ async def translate_to_english(text: str, from_language: str) -> str:
                 "https://libretranslate.de/translate",
                 data={"q": text, "source": from_language, "target": "en", "format": "text"}
             )
-        if response.status_code == 200:
-            return response.json().get("translatedText", text)
-        return text
-    except Exception:
-        return text
+            if response.status_code == 200:
+                return response.json().get("translatedText", text)
+        return f"[{from_language.upper()}] {text}"
+    except:
+        return f"[{from_language.upper()}] {text}"
 
 async def classify_mental_health(text: str) -> str:
     client = get_gradio_client()
@@ -78,37 +64,79 @@ async def classify_mental_health(text: str) -> str:
         return "unknown"
     try:
         result = client.predict(text, api_name="/_predict")
-        if not result or not isinstance(result, (tuple, list)) or len(result) < 2:
+        if not result:
             return "unknown"
-        label = result[0]
-        if not label or str(label).lower() in ["nan", ""]:
-            return "unknown"
-        return str(label)
-    except Exception:
+        if isinstance(result, (tuple, list)) and len(result) >= 2:
+            label = result[0]
+            score = result[1] if len(result) > 1 else None
+            if not label or str(label).lower() in ["nan", ""]:
+                return "unknown"
+            if score is not None:
+                try:
+                    if float(score) != float(score):
+                        return "unknown"
+                except:
+                    return "unknown"
+            return str(label)
+        return "unknown"
+    except:
         return "unknown"
 
 def format_suggestions(text: str) -> str:
     if not text.strip():
         return "No suggestions were generated."
-    text = re.sub(r'^\s*[\d.o•\-\*]+\s*', '', text, flags=re.MULTILINE)
-    text = re.sub(r'\n\s*[\d.o•\-\*]+\s*', '<br><br>', text, flags=re.MULTILINE).strip()
-    return "1. " + text.replace('\n', '<br>')
+    text = text.replace("**", "").replace("*", "").strip()
+    patterns = [
+        r"(?:\d+[\.\)]\s*)",
+        r"(?:^|\n)(?=\d+[\.\)]\s)",
+        r"(?:\n\s*)(?=\d+[\.\)]\s)",
+        r"(?:^|\n)(?=[•\-\*]\s)",
+        r"(?:\n\s*)(?=[•\-\*]\s)"
+    ]
+    suggestions = []
+    for pattern in patterns:
+        parts = re.split(pattern, text)
+        if len(parts) > 1:
+            suggestions = [part.strip() for part in parts if part.strip()]
+            break
+    if not suggestions:
+        for sep in [r"\n\s*\n", r"\n(?=\d)", r"\n(?=[•\-\*])"]:
+            parts = re.split(sep, text)
+            if len(parts) > 1:
+                suggestions = [part.strip() for part in parts if part.strip()]
+                break
+    if not suggestions:
+        suggestions = [text]
+    formatted_suggestions = []
+    for i, suggestion in enumerate(suggestions):
+        suggestion = re.sub(r"^(?:\d+[\.\)]\s*|[•\-\*]\s*)", "", suggestion).strip()
+        if suggestion:
+            suggestion = suggestion.replace('\n', '<br>')
+            formatted_suggestions.append(f"{i+1}. {suggestion}")
+    return "<br><br>".join(formatted_suggestions) if formatted_suggestions else "No suggestions were generated."
 
 async def get_llm_suggestions(classification: str, user_language: str, original_text: str) -> str:
-    client_groq = get_groq_client()
-    if client_groq is None:
-        return "Sorry, unable to generate suggestions at this time."
-
-    suggestion_prompt = f"""You are a psychology expert. Provide 3-5 specific and actionable mental health suggestions for someone experiencing feelings related to the following text.
-
-User's Text: "{original_text}"
-Category: {classification}
-
-Each suggestion should be short, practical, and easy to understand. Respond in {user_language} and format as a numbered list.
-"""
     try:
+        text_language = detect_language(original_text)
+        translated_text = await translate_to_english(original_text, text_language)
+        suggestion_prompt = f"""You are a psychology expert. Analyze the following text and provide practical mental health suggestions:
+
+Category: {classification}
+Text: "{translated_text}"
+
+Provide 3-5 specific and useful mental health suggestions for this text. Each suggestion should:
+- Be short and easy to understand
+- Be practical and actionable
+- Match the context described
+
+Respond in {user_language} and format as follows:
+1. First suggestion
+2. Second suggestion
+3. Third suggestion
+..."""
+        client_groq = Groq()
         completion = client_groq.chat.completions.create(
-            model="llama3-8b-8192",
+            model="openai/gpt-oss-20b",
             messages=[{"role": "user", "content": suggestion_prompt}],
             temperature=0.7,
             max_completion_tokens=600,
@@ -117,23 +145,19 @@ Each suggestion should be short, practical, and easy to understand. Respond in {
             stream=False
         )
         raw_suggestions = completion.choices[0].message.content.strip()
-        if not raw_suggestions or raw_suggestions.lower().startswith("sorry"):
+        if not raw_suggestions or raw_suggestions.lower().startswith("error"):
             return "Sorry, unable to generate suggestions at this time."
         return format_suggestions(raw_suggestions)
-    except Exception:
+    except:
         return "Sorry, an error occurred while generating suggestions. Please try again later."
 
 @app.post("/analyze", response_model=AnalysisResponse)
 async def analyze_mental_health(user_input: UserInput):
-    if not user_input.text.strip():
-        raise HTTPException(status_code=400, detail="Input text cannot be empty.")
-    
     try:
         user_lang = detect_language(user_input.text)
-        text_english = await translate_to_english(user_input.text, user_lang)
+        text_english = await translate_to_english(user_input.text, user_lang) if user_lang != 'en' else user_input.text
         classification = await classify_mental_health(text_english)
         suggestions = await get_llm_suggestions(classification, user_lang, user_input.text)
-        
         return AnalysisResponse(
             translated_text=text_english if user_lang != 'en' else None,
             classification=classification,
