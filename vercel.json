@@ -1,11 +1,15 @@
 {
   "version": 2,
   "builds": [
-    { "src": "api/main.py", "use": "@vercel/python" },
+    {
+      "src": "api/main.py",
+      "use": "@vercel/python",
+      "config": { "runtime": "python3.11" }
+    },
     { "src": "client/**", "use": "@vercel/static" }
   ],
   "routes": [
-    { "src": "/api/analyze", "methods": ["POST"], "dest": "api/main.py" },
+    { "src": "/api/(.*)", "dest": "/api/main.py" },
     { "src": "/(.*)", "dest": "/client/$1" }
   ]
 }
