@@ -18,7 +18,8 @@ The project is divided into 3 main components:
 ```
 CalmMind/
 ├── client/          # Frontend (HTML, CSS, JavaScript)
-├── server/          # Backend API (FastAPI)
+├── api/          # Backend API (FastAPI)
+├── requirements.txt # Python dependencies
 └── mental-health.ipynb  # ML Model (BERT Classification)
 ```
 
@@ -35,16 +36,62 @@ CalmMind/
 - Multi-language translation
 - Generate suggestions using Groq LLM
 
-### Machine Learning Model
-- **BERT-based classification** model
-- Trained on mental health dataset
-- Deployed on Hugging Face Hub
-- Classifies different psychological states
+## Machine Learning Model
+
+### Dataset
+- Uses "Sentiment Analysis for Mental Health" dataset
+- Dataset link: `https://www.kaggle.com/datasets/suchintikasarkar/sentiment-analysis-for-mental-health`
+- Includes labeled psychological state statements
+- Preprocessed and cleaned data
+
+### Model
+- **BERT-base-uncased** as backbone
+- Fine-tuned for classification task
+- Handles class imbalance with weighted loss
+- Deployed on Hugging Face Hub: `BienKieu/mental-health`
+
+### Training Process
+```python
+# See details in mental-health.ipynb
+- Text preprocessing and cleaning
+- Tokenization with BERT tokenizer
+- Training with custom loss function
+- Evaluation and visualization
+- Push model to Hugging Face Hub
+```
+
+### Fine-tuning on Imbalanced Data (7 labels)
+
+- Problem: Class imbalance across 7 labels: `Anxiety`, `Bipolar`, `Depression`, `Normal`, `Personality disorder`, `Stress`, `Suicidal`.
+- Technique: Weighted Cross-Entropy Loss to penalize minority classes more heavily.
+- Split: Train/Test = 80/20.
+- Backbone: `bert-base-uncased`, fine-tuned with class weights computed from label frequencies.
+- Training notebook (Kaggle): `https://www.kaggle.com/code/battboii/mental-health`
+
+### Result (Test 20%)
+
+Evaluation results on the test set (confusion matrix / precision-recall-f1 per class):
+
+```
+                      precision    recall  f1-score   support
+
+             Anxiety       0.84      0.88      0.86       768
+             Bipolar       0.85      0.85      0.85       556
+          Depression       0.76      0.73      0.75      3081
+              Normal       0.94      0.93      0.93      3264
+Personality disorder       0.77      0.75      0.76       215
+              Stress       0.72      0.72      0.72       517
+            Suicidal       0.68      0.71      0.70      2131
+
+            accuracy                           0.81     10532
+           macro avg       0.79      0.80      0.80     10532
+        weighted avg       0.81      0.81      0.81     10532
+```
 
 ## Installation and Setup
 
 ### System Requirements
-- Python 3.8+
+- Python 3.11+
 - Node.js (for frontend)
 - GPU (recommended for model training)
 
@@ -65,18 +112,18 @@ pip install -r requirements.txt
 cd client
 # Open index.html in browser
 # Or use live server
-python -m http.server 8001
+python -m http.server 7860
 ```
 
 ### 4. Run Backend Server
 ```bash
 cd server
 python main.py
-# Server will run on http://localhost:8000
+# Server will run on http://localhost:7860
 ```
 
 ### 5. Access Application
-Open browser and navigate to: `http://localhost:8001` (or index.html file)
+Open browser and navigate to: `http://localhost:7860` (or index.html file)
 
 ## Configuration
 
@@ -91,29 +138,6 @@ HF_TOKEN=your_huggingface_token_here
 ### Required API Keys
 1. **Groq API**: For generating personalized suggestions
 2. **Hugging Face Token**: For accessing ML model
-
-## Machine Learning Model
-
-### Dataset
-- Uses "Sentiment Analysis for Mental Health" dataset
-- Includes labeled psychological state statements
-- Preprocessed and cleaned data
-
-### Model
-- **BERT-base-uncased** as backbone
-- Fine-tuned for classification task
-- Handles class imbalance with weighted loss
-- Deployed on Hugging Face Hub: `BienKieu/mental-health`
-
-### Training Process
-```python
-# See details in mental-health.ipynb
-- Text preprocessing and cleaning
-- Tokenization with BERT tokenizer
-- Training with custom loss function
-- Evaluation and visualization
-- Push model to Hugging Face Hub
-```
 
 ## API Endpoints
 
@@ -145,7 +169,7 @@ Analyze text and return classification + suggestions
 - Automatic translation to English for processing
 
 ### 2. Mental Health Classification
-- 6+ categories: anxiety, depression, stress, etc.
+- 7 categories: anxiety, bipolar, depression, normal, personality disorder, stress, suicidal
 - High accuracy with BERT model
 - Real-time processing via Gradio client
 
@@ -175,17 +199,20 @@ client/
 ├── styles.css      # Styling and responsive design
 └── script.js       # Frontend logic and API calls
 
-server/
-├── main.py         # FastAPI application
-├── requirements.txt # Python dependencies
+api/
+├── app.py         # FastAPI application
 └── run.py         # Server runner
 
 mental-health.ipynb # ML model training notebook
+
+requirements.txt # Python dependencies
+
+vercel.json # Set up vercel 
 ```
 
 ### Adding New Features
 1. **Frontend**: Edit `client/script.js` and `client/styles.css`
-2. **Backend**: Add endpoints in `server/main.py`
+2. **Backend**: Add endpoints in `api/app.py`
 3. **ML Model**: Update notebook and retrain model
 
 ## Performance
@@ -225,7 +252,6 @@ MIT License - see LICENSE file for details
 ## Authors
 
 - **Bien Kieu** - Developer & ML Engineer
-- **CalmMind Team** - Mental Health Platform
 
 ## Acknowledgments
 
