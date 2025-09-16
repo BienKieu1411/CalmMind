@@ -1,4 +1,4 @@
-# 🌱 CalmMind - Mental Health Analysis Platform
+# CalmMind - Mental Health Analysis Platform
 
 CalmMind is an intelligent mental health analysis platform that uses AI to understand emotions and provide personalized mental health care recommendations.
 
