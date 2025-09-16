@@ -103,7 +103,6 @@ cd CalmMind
 
 ### 2. Install Backend
 ```bash
-cd server
 pip install -r requirements.txt
 ```
 
@@ -117,8 +116,8 @@ python -m http.server 7860
 
 ### 4. Run Backend Server
 ```bash
-cd server
-python main.py
+cd api
+python run.py
 # Server will run on http://localhost:7860
 ```
 
@@ -132,7 +131,6 @@ Create `.env` file in `server/` directory:
 
 ```env
 GROQ_API_KEY=your_groq_api_key_here
-HF_TOKEN=your_huggingface_token_here
 ```
 
 ### Required API Keys
